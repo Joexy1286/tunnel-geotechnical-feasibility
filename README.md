@@ -2,17 +2,17 @@
 ## Tunnel Alignment: Kornelimünster → Walheim → Friesenrath
 ### Aachen Region, North Rhine-Westphalia, Germany
 
-**Joexy1286**  
-Field Tunnel Mapping Training | Geological-Geotechnical Cross Section & Site Investigation Programme  
-[LinkedIn](https://linkedin.com/in/joseph-turkson) · [Reservoir Geology Portfolio](https://github.com/Joexy1286/reservoir-geology-portfolio) · [CO₂ Mineralisation Portfolio](https://github.com/Joexy1286/co2-mineralisation-phreeqc)
+**Joexy1286**
+Field Tunnel Mapping Training | Geological-Geotechnical Cross Section, Rock Mass Characterisation & Site Investigation Programme
+ Portfolio](https://github.com/Joexy1286/co2-mineralisation-phreeqc)
 
 ---
 
 ## Project Overview
 
-This repository presents a **feasibility-level geological-geotechnical study** of a proposed ~4.3 km tunnel alignment running from Kornelimünster through Walheim to Friesenrath in the Aachen region of NRW, Germany. The study was conducted as part of a Field Tunnel Mapping Training exercise and follows standard engineering geological feasibility methodology.
+This repository presents a **feasibility-level geological-geotechnical study** of a proposed ~4.3 km tunnel alignment running from Kornelimünster through Walheim to Friesenrath in the Aachen region of NRW, Germany. The study combines desk-study GIS analysis with **field-collected structural and rock-strength data** — 98 discontinuity measurements across 12 outcrops and Schmidt hammer testing — to build a rock mass model and ground-behaviour prediction, not just a lithological cross section.
 
-The alignment traverses a complex sequence of **Devonian and Carboniferous formations** including carbonate units with significant karst potential, a major thrust fault (Breinigerberg Überschiebung), and zones of shallow bedrock cover — all presenting distinct geotechnical challenges for tunnel design and construction.
+The alignment traverses eight mapped Devonian and Carboniferous formations, including carbonate units with confirmed karst potential, a hydraulically active thrust fault (Breinigerberg Überschiebung), and a structurally sheared schist zone identified as the principal geotechnical hazard.
 
 ---
 
@@ -21,9 +21,11 @@ The alignment traverses a complex sequence of **Devonian and Carboniferous forma
 ### Data Sources
 | Dataset | Source | Format |
 |---|---|---|
-| Geological map (1:50,000) | IS GK50 WMS — GeoPortal NRW | WMS / Shapefile |
-| Digital Terrain Model (DGM1, 1m) | Geobasis NRW | GeoTIFF tiles |
+| Geological map (1:50,000) | IS GK50 — Geologischer Dienst NRW | WMS / Shapefile |
+| Digital Terrain Model (DGM1, 1 m) | Geobasis NRW | GeoTIFF tiles |
 | Fault structures | IS GK50 — Störungen layer | Shapefile |
+| Field discontinuity data | 98 dip/dip-direction readings, 12 outcrops | Field survey |
+| Rock strength | Schmidt hammer (Type L), multiple outcrops | Field survey |
 | Coordinate system | EPSG:25832 (ETRS89 / UTM zone 32N) | — |
 
 ### Workflow
@@ -31,26 +33,35 @@ The alignment traverses a complex sequence of **Devonian and Carboniferous forma
 1. QGIS project setup — EPSG:25832, WMS basemap, GK50 geological layers
          │
          ▼
-2. Tunnel alignment digitisation — 4.28 km polyline, 500 m corridor buffer
+2. Alignment digitisation — 4.28 km polyline, corridor buffer
          │
          ▼
-3. DEM processing — DGM1 tile mosaic → Virtual Raster → surface profile extraction
+3. DEM processing — DGM1 tile mosaic → Virtual Raster → surface profile
          │
          ▼
 4. Bedrock surface — Quaternary-base contours → TIN interpolation → bedrock-top profile
          │
          ▼
-5. Points Along Geometry (10 m spacing) → Sample Raster Values → Join Attributes
-   (surface elevation, bedrock top, overburden, GK50 lithology attributes)
+5. Chainage-referenced profile — 10 m sampling, lithology join, overburden calculation
          │
          ▼
-6. Python cross section generation — matplotlib, 8 formations, hazard zonation
+6. Structural analysis — stereonet clustering (Python KMeans on pole vectors),
+   independently cross-validated against Stereonet 11 Kamb statistical contouring
          │
          ▼
-7. Hazard assessment — karst, groundwater ingress, fault zone, shallow cover
+7. Bedding-dip projection — apparent-dip conversion (true dip ~327°/42°) to project
+   formation contacts to depth along the section's actual geodetic bearing
          │
          ▼
-8. Site investigation programme — geophysics-first, targeted borehole clusters
+8. Rock mass characterisation — Schmidt hammer → UCS (Deere-Miller), ISRM grading,
+   GSI estimation per formation
+         │
+         ▼
+9. Ground behaviour model — Stable / Ravelling / Squeezing classification per zone
+         │
+         ▼
+10. Hazard assessment & site investigation programme — field-data-driven, targeting
+    confirmed and remaining data gaps
 ```
 
 ---
@@ -61,74 +72,75 @@ The alignment traverses a complex sequence of **Devonian and Carboniferous forma
 | Parameter | Value |
 |---|---|
 | Total alignment length | 4,280 m |
-| Surface elevation range | 229.9 – 307.9 m asl |
-| Bedrock surface range | 224.3 – 294.1 m asl |
-| Overburden range | 0 – 46 m |
-| Points with < 20 m cover | 274 / 429 (64%) |
-| TIN edge anomalies flagged | 23 points |
-| Fault crossing | Breinigerberg Überschiebung (~Ch. 1800, ~38 m lateral offset) |
+| Regional bedding attitude | ~327°/42° (confirmed by 3 independent methods — see below) |
+| Tunnel bearing | 177° (geodetic, portal to portal) |
+| Fault crossing | Breinigerberg Überschiebung, chainage ≈1,200–1,600 m (~38 m lateral offset from centerline) |
+| Minimum cover, realistic portal-to-portal grade | −16 m at chainage 1,460 m (i.e. straight grade breaches natural ground here) |
+| Points below 20 m target cover | 413 / 429 (~96%) |
+| Carbonate lithology (karst risk) | ~38% of alignment length |
 
-### Formation Summary
-| Formation | Chainage (m) | Mean Cover (m) | Hazard |
+### Structural Data — Independently Cross-Validated
+98 field discontinuity readings were analysed via K-means clustering on pole vectors (Python), then independently checked against Stereonet 11's Kamb statistical contouring — a different algorithm, same dataset, no shared input. All four identified discontinuity sets landed on matching contour concentrations in both methods (see `figures/02` and `figures/03`).
+
+| Set | Readings | Outcrops | Mean orientation | Interpretation |
+|---|---|---|---|---|
+| Set 1 | 33 | 10 | 327° / 42° | **Bedding** — used for depth projection |
+| Set 2 | 25 | 9 | 146° / 61° | Secondary joint set |
+| Set 3 | 18 | 7 | 62° / 70° | Regional tectonic joint set |
+| Set 4 | 22 | 9 | 234° / 81° | Regional tectonic joint set |
+
+### Formation Summary (corrected chainage order, field-verified where noted)
+| Formation | Chainage (m) | Rock strength data | Ground behaviour |
 |---|---|---|---|
-| Hastière/Pont d'Arcole/Vesdre-Fm. (Mittlerer Kohlenkalk) | 0–690 | 11.2 | ⛔ Very High |
-| Terwagne/Neffe-Fm. (Oberer Kohlenkalk) | 700–1100 | 8.4 | ⛔ Very High |
-| Esneux/Evieux-Fm. (Condroz-Sandstein) | 1110–2670 | 31.6 | ✅ Low |
-| Schmidthof-Fm. + Famenne Schiefer | 2680–3260 | 17.2 | ⚠️ Moderate |
-| Schmidthof-Fm., Frasnes-Knollenkalk | 3270–3600 | 17.4 | 🔴 High |
-| Friesenrath-Formation | 3610–3780 | 1.3 | ✅ Low |
-| Massenkalk (ungegliedert) | 3790–3860 | 6.3 | 🔴 High |
-| Fleuth-Schichten | 3870–4280 | 8.0 | ✅ Low |
+| Terwagne-Formation (Kohlenkalk) | 0–695 | **Schmidt hammer**: 159 MPa mean, R5–R6 (n=12) | Stable |
+| Hastière-Formation (Kohlenkalk) | 695–1,105 | No field data | Stable (estimated) |
+| Esneux/Evieux-Fm (Condroz-Sandstein) | 1,105–2,675 | Structural data only; no strength data | Stable, **Squeezing** at fault crossing (1,200–1,600) |
+| Schmidthof-Fm, Frasnes-Schiefer | 2,675–3,265 | **Schmidt hammer**: intact ~145 MPa, jointed 20–31 MPa, R0–R2 (3 outcrops) | **Squeezing** |
+| Schmidthof-Fm, Frasnes-Knollenkalk | 3,265–3,605 | **Schmidt hammer**: 179 MPa mean, R5 (n=3) | Stable |
+| Massenkalk | 3,605–3,785 | Southern traverse: intact ~255 MPa / jointed ~52 MPa (shared reading, unconfirmed exact station) | Ravelling (karst) |
+| Fleuth-Schichten | 3,785–3,865 | Southern traverse (as above) | Ravelling |
+| Friesenrath-Formation | 3,865–4,280 | Southern traverse (as above) | Ravelling |
 
 ---
 
 ## Figures
 
-### Figure 1 — Geological-Geotechnical Cross Section
-*Main deliverable — 3-panel display: geological section · overburden profile · hazard strip*
+### Figure 1 — Geological-Geotechnical Model (4-panel)
+![Geological-geotechnical model](figures/01_geological_geotechnical_model.png)
 
-![Geological cross section](figures/01_geological_cross_section.png)
+Stepwise model: **(1) Geological** — formation contacts projected to depth using field-measured bedding dip (apparent-dip corrected for the section's true bearing), not a single uniform angle. **(2) Rock Mass** — GSI/UCS/grade per zone, Schmidt hammer sample locations marked. **(3) Rock Behaviour** — predicted Stable/Ravelling/Squeezing classification with indicative support class. **(4) Depth below ground surface** — confirms this is a shallow structure throughout (max ≈39 m), independent of any elevation datum.
 
-**Reading the section:**
-- **Upper panel:** Colour-coded lithological units from GK50, Quaternary cover (tan), bedrock surface (dashed gold), and tunnel envelope (blue). The Breinigerberg Überschiebung fault zone is shown in red at Ch. ~1800.
-- **Middle panel:** Rock cover above tunnel crown. Gold dashed line = 20 m minimum cover threshold. Red areas indicate negative overburden (TIN edge effects — require field verification).
-- **Lower panel:** Hazard zonation strip colour-coded by geotechnical risk level — green (low) through dark red (very high). Carbonate units at Ch. 0–1100 represent the highest-risk section.
+### Figures 2–3 — Stereonet Cross-Validation
+![Python stereonet](figures/02_stereonet_python.png)
+![Kamb contour](figures/03_stereonet_kamb_contour.png)
 
----
+Two independent methods — a Python clustering algorithm and Stereonet 11's Kamb statistical contouring — converge on the same four discontinuity sets in the same relative positions and strengths, supporting the bedding interpretation used throughout the model.
 
-### Figure 2 — Formation Statistics & Geotechnical Summary
-*Formation distribution, overburden histogram, hazard pie chart*
-
-![Formation statistics](figures/02_formation_statistics.png)
-
-Key observations:
-- The Esneux-Evieux Formation (Condroz-Sandstein) dominates the central section (Ch. 1110–2670) and represents the most favourable ground — competent sandstone, adequate cover, low karst risk.
-- Carbonate formations (cvtene, ctmk) account for ~26% of the alignment length but carry the highest geotechnical risk due to karst dissolution potential.
-- 64% of alignment points fall below the 20 m minimum cover threshold — largely in the carbonate-dominated northern section.
-
----
-
-### Figure 3 — Site Investigation Programme
-*Geophysics-first strategy with targeted borehole clusters at high-risk zones*
-
-![Site investigation](figures/03_site_investigation.png)
-
-**Investigation strategy:**
-- **Phase 1 (Geophysics):** Full-alignment 2D ERT and seismic refraction profile to map bedrock depth, fault zone geometry, and karst cavities without drilling.
-- **Phase 2 (Boreholes):** Seven targeted boreholes at key risk zones (portals, fault zone, karst sections, shallow cover concentrations).
-- **Phase 3 (Monitoring):** Standpipe piezometers in BH-2, BH-3, and BH-6 for 6-month groundwater baseline prior to construction.
+### Figures 4–6 — Representative Outcrop Photographs
+![Bedded outcrop](figures/04_outcrop_bedding.jpg)
+![Fractured, iron-stained rock](figures/05_outcrop_fractured.jpg)
+![Jointed rock mass](figures/06_outcrop_jointed_mass.jpg)
 
 ---
 
 ## Hazard Assessment Summary
 
-| Hazard | Risk Level | Location | Recommended Mitigation |
+| Hazard | Evidence | Location | Recommended Mitigation |
 |---|---|---|---|
-| Karst / dissolution features | Very High | Ch. 0–1100 (carbonates) | Pre-excavation grouting; probe drilling ahead of face |
-| Groundwater ingress | High | Ch. 0–1100, Ch. 3790–3860 | Groundwater baseline monitoring; NATM with drainage |
-| Fault zone crossing | High | Ch. ~1800 (Breinigerberg Überschiebung) | Reduced advance rate; temporary support; pre-grouting |
-| Shallow rock cover | Moderate–High | Multiple zones (64% of alignment) | Settlement monitoring; compensatory grouting where < 10 m |
-| Lithological heterogeneity | Moderate | Transitions at Ch. ~1100, ~2670, ~3600 | Adaptable support class; face mapping during excavation |
+| Karst / solution features | Regional aquifer precedent (Schmithof waterworks); ~38% of alignment in carbonate units | Terwagne/Hastière (0–1,105 m), Massenkalk (3,605–3,785 m) | Geophysical screening (GPR/microgravity); probe drilling ahead of face; void treatment contingency |
+| Groundwater ingress | Breinigerberg fault classified hydraulically active by Geologischer Dienst NRW | Chainage 1,200–1,600 m | Pre-excavation grouting curtain; continuous monitoring; full hydrostatic design case |
+| Fault zone crossing | Confirmed via GK50 mapping + stereonet proximity analysis (~38 m offset); coincides with modelled −16 m cover deficit | Chainage 1,200–1,600 m | Targeted boreholes/geophysics; Support Class III (steel sets, systematic bolting, shotcrete) |
+| Weak, sheared ground | **Schmidt hammer confirmed**: 3 independent outcrops, R0–R2 in jointed sections | Schmidthof Frasnes-Schiefer (2,675–3,265 m) | Support Class III default; face mapping during excavation; probe ahead |
+| Jointed weak zones in competent formations | **Schmidt hammer confirmed**: strong intact rock, weak joints (R2–R3) | Massenkalk/Fleuth-Schichten/Friesenrath (3,605–4,280 m) | Support Class II (systematic bolting/mesh); verify exact station via follow-up survey |
+
+---
+
+## Data Gaps Identified (Priorities for Next Investigation Phase)
+
+- **Esneux/Evieux-Formation** (1,105–2,675 m, the corridor's largest formation): a field station exists (Outcrop 13) with structural data but no strength measurement — lowest-cost gap to close.
+- **Hastière-Formation** (695–1,105 m): no field station at all.
+- **Massenkalk / Fleuth-Schichten / Friesenrath**: rock strength data exists only as a broad, imprecisely located traverse reading shared across all three formations — needs per-formation confirmation.
+- **RQD and systematic joint-condition data**: not collected in the current field programme; current GSI values are first-pass estimates pending this data.
 
 ---
 
@@ -138,13 +150,17 @@ Key observations:
 tunnel-geotechnical-feasibility/
 ├── README.md
 ├── figures/
-│   ├── 01_geological_cross_section.png   # Main 3-panel cross section
-│   ├── 02_formation_statistics.png        # Formation stats & hazard summary
-│   └── 03_site_investigation.png          # Site investigation programme
+│   ├── 01_geological_geotechnical_model.png   # 4-panel model: geology / rock mass / behaviour / depth
+│   ├── 02_stereonet_python.png                # Python KMeans clustering, n=98
+│   ├── 03_stereonet_kamb_contour.png          # Stereonet 11 Kamb contouring (independent cross-check)
+│   ├── 04_outcrop_bedding.jpg                 # Representative field photograph — bedding
+│   ├── 05_outcrop_fractured.jpg                # Representative field photograph — fractured/weathered
+│   └── 06_outcrop_jointed_mass.jpg             # Representative field photograph — jointed rock mass
 ├── scripts/
-│   └── build_cross_section.py            # Full Python workflow
+│   └── build_geotechnical_model.py            # Full Python workflow (4-panel model generation)
 └── data/
-    └── profile_points_v2_lithology_v2.csv  # QGIS-exported point dataset
+    ├── profile_points_v2_lithology_v2.csv      # QGIS-exported chainage-referenced point dataset
+    └── dip_readings_with_sets.xlsx             # 98 field discontinuity readings with set classification
 ```
 
 ---
@@ -152,7 +168,7 @@ tunnel-geotechnical-feasibility/
 ## Dependencies
 
 ```bash
-pip install numpy pandas matplotlib scipy
+pip install numpy pandas matplotlib scipy pyproj scikit-learn
 ```
 
 ---
